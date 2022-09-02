@@ -1,6 +1,8 @@
 # Pararius Scraper
 Web scaraper for going through Pararius listings and saving them onto an excel file.
 
+If you have any ideas with which you can improve this idea, feel free to create an issue and I hope this helps someone in need ':D
+
 ### How To Run
 1. Clone the repo
 
