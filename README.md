@@ -5,10 +5,10 @@ Web scaraper for going through Pararius listings and saving them onto an excel f
 1. Clone the repo
 `git clone https://github.com/vedant15188/parariusScraper`
 
-2. Switch to the correct directory and initialize a python virtual environment
+2. Switch to the correct directory
 `cd ./parariusScraper`
 
-3. (Optional) Initialize virtual environment and activate it
+3. (Optional) Initialize a python virtual environment and activate it
 `python -m venv .`
 `./Scripts/activate`
 
