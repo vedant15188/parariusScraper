@@ -134,8 +134,8 @@ def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior=""):
 # Returns: Nothing lol. Just exports the data into an excel file within outputs folder!
 ######################################################################################################################
 def exportDataToExcel(csvData):
+    # Extract current date and time
     currentDateTime = datetime.now()
-
     currentYear = str(currentDateTime.year)
     currentMonth = str(currentDateTime.month)
     currentDay = str(currentDateTime.day)
@@ -143,15 +143,19 @@ def exportDataToExcel(csvData):
     currentMinute = str(currentDateTime.minute)
     currentSecond = str(currentDateTime.second)
 
+    # Create outputs directory if it doesn't exist
     os.makedirs('outputs', exist_ok=True)
 
+    # Construct the filename and the excel sheet headers
     fileName = "Pararius_Scrape_" + currentDay + "-" + currentMonth + "-" + currentYear + "-" + currentHour+currentMinute+currentSecond+".xlsx"
     excelHeaders = ["Name", "Status", "Rent Amount (in EUR)","Surface Area", "Number of rooms", "Interiors", "Location", "Listing Link", "Estate Agent Name", "Estate Agent Link"]
 
+    # Create pandas dataframe with export it with openpyxl engine, freezing the top row and removing indexes from rows.
     pdData = pd.DataFrame(csvData)
     pdData.to_excel(fileName, freeze_panes=(1, 0), engine="openpyxl", header=excelHeaders, index=False)
     
-    os.replace(fileName, "./csv/"+fileName)
+    # Move the generated excel sheet into the outputs folder
+    os.replace(fileName, "./outputs/"+fileName)
 
 csvData = fetchData(minPrice=1500, maxPrice=3000)
 exportDataToExcel(csvData)
