@@ -2,3 +2,4 @@ pyvenv.cfg
 /Scripts
 /Lib
 /Include
+/outputs

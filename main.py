@@ -41,7 +41,7 @@ def UrlList(baseUrl: str, pageCount: int) -> list[str]:
     maxPageCount = int(siteHTML.find_all("ul", class_="pagination__list")[0].find_all("li")[-2].a.string)
 
     if(pageCount > maxPageCount):
-        print("There are only", maxPageCount, "pages available.")
+        print("There are only", maxPageCount, "pages of data available.")
         pageCount = maxPageCount # max number of pages to avoid duplicates
 
     urlList = []
@@ -59,9 +59,10 @@ def UrlList(baseUrl: str, pageCount: int) -> list[str]:
 #   minPrice -> int: Minimum rental price for the properties you're interested in.
 #   maxPrice -> int: Maximum rental price for the properties you're interested in.
 #   interior -> string: The type of interior you want in your property i.e. Shell/Upholstered/Furnished
+#   newPref  -> bool: The user preference if they only want new listings i.e. True if yes, otherwise False
 # Returns: Returns a 2D array with all the parsed info in its appropriate format
 ######################################################################################################################
-def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior=""):
+def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior="", newPref=False):
     baseUrl = "https://www.pararius.com/apartments/" + city + "/" + str(minPrice) + "-" + str(maxPrice)
     
     if(len(interior) != 0):
@@ -76,7 +77,7 @@ def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior=""):
 
     urlList = UrlList(baseUrl, pageCount)
 
-    csvData = []
+    excelData = []
     for url in urlList:
         try:
             print("Fetching URL: ", url)
@@ -97,8 +98,11 @@ def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior=""):
             # Extracting listing's status (New/Highlighted/Rented Under Options ...)
             listingLabelHTML = listing.section.find("div", class_="listing-search-item__label")
             listingStatus = ( (listingLabelHTML.span.string).strip() if listingLabelHTML != None else "")
+            # If listing is not new and user is only interested in new listings then skip this listing!
+            if("new" not in listingStatus.lower() and newPref):
+                continue
 
-            # Extracting listing's rent amount
+            # Extracting listing's rent amount, removing commas, "per month" keyword and € sign to get just the number
             listingRentAmount = int((listing.section.find("div", class_="listing-search-item__price").string).strip().split("per")[0].split("€")[1].strip().replace(",",""))
 
             # Extracting listing's surface area, number of rooms and interior type
@@ -119,21 +123,21 @@ def fetchData(city="amsterdam", minPrice=0, maxPrice=60000,interior=""):
             listingEstateAgentLink = "https://www.pararius.com" + listingEstateAgent["href"]
 
             listingData = [listingName, listingStatus, listingRentAmount, listingSurfaceArea, listingNumberOfRooms, listingInterior, listingLocation, listingLink, listingEstateAgentName, listingEstateAgentLink]
-            csvData.append(listingData)
+            excelData.append(listingData)
 
     if(len(urlList) >= 5):
         print("Phew! that was a lot of scraping. I'll need a coffee after this':)")
 
-    return csvData
+    return excelData
 
 ######################################################################################################################
 # Description: Creates an outputs folder, if it doesn't exist and exports a 2D array into an excel file 
 #              with proper naming convention via pandas.
 # Parameters:
-#   csvData -> List[List[]]: The 2D array which needs to be exported
+#   excelData -> List[List[]]: The 2D array which needs to be exported
 # Returns: Nothing lol. Just exports the data into an excel file within outputs folder!
 ######################################################################################################################
-def exportDataToExcel(csvData):
+def exportDataToExcel(excelData):
     # Extract current date and time
     currentDateTime = datetime.now()
     currentYear = str(currentDateTime.year)
@@ -151,11 +155,74 @@ def exportDataToExcel(csvData):
     excelHeaders = ["Name", "Status", "Rent Amount (in EUR)","Surface Area", "Number of rooms", "Interiors", "Location", "Listing Link", "Estate Agent Name", "Estate Agent Link"]
 
     # Create pandas dataframe with export it with openpyxl engine, freezing the top row and removing indexes from rows.
-    pdData = pd.DataFrame(csvData)
+    pdData = pd.DataFrame(excelData)
     pdData.to_excel(fileName, freeze_panes=(1, 0), engine="openpyxl", header=excelHeaders, index=False)
     
     # Move the generated excel sheet into the outputs folder
     os.replace(fileName, "./outputs/"+fileName)
 
-csvData = fetchData(minPrice=1500, maxPrice=3000)
-exportDataToExcel(csvData)
+# User input for the city and converting it into lowercase
+print("Enter the city name where you want to search for rentals")
+city = input().lower()
+
+# Taking user input for minimum rental price and validating it
+while(True):
+    try:
+        print("Enter the minimum rental price for the properties you're interested in (Leave blank and press enter if you have no preference)")
+        minPrice = int(input())
+        break
+    except:
+        print("Please enter a positive integer value!")
+
+# Taking user input for maximum rental price and validating it
+while(True):
+    try:
+        print("Enter the maximum rental price for the properties you're interested in (Leave blank and press enter if you have no preference)")
+        maxPrice = int(input())
+        break
+    except:
+        print("Please enter a positive integer value!")
+
+# Taking user input for interior preference and validating it
+while(True):
+    try:
+        print("Enter the type of interiors you're interested in")
+        print("1 - Shell")
+        print("2 - Upholstered")
+        print("3 - Furnished")
+        print("4 - No Perference!")
+        interior = int(input("Enter your input: "))
+        break
+    except:
+        print("Please enter a value from the above options or just press enter!")
+
+# Taking user input if they want only new listings
+while(True):
+    try:
+        print("Are you ONLY interested in new listing?")
+        print("1 - Yes")
+        print("2 - No")
+        newPref = int(input("Enter your input: "))
+        break
+    except:
+        print("Please enter a value from the above options only!")
+
+# Mapping for user preference for new properties
+newMapping = {
+    1: True,
+    2: False
+}
+
+# Mapping for interior options to their URL keywords
+interiorMapping = {
+    1: "shell",
+    2: "upholstered",
+    3: "furnished",
+    4: ""
+}
+
+# Get all the required data
+excelData = fetchData(city=city, minPrice=minPrice, maxPrice=maxPrice, interior=interiorMapping[interior], newPref=newMapping[newPref])
+
+# Export the fetched data
+exportDataToExcel(excelData)
