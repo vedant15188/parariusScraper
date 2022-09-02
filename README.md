@@ -19,4 +19,5 @@ Web scaraper for going through Pararius listings and saving them onto an excel f
 `python main.py`
 
 You will see the excel file within the outputs folder.
+
 File Naming Convention: `Pararius_Scrape_{day}-{month}-{year}-{hours}{minutes}{seconds}.xlsx`
