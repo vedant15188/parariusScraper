@@ -3,3 +3,5 @@ pyvenv.cfg
 /Lib
 /Include
 /outputs
+/bin
+.DS_Store
